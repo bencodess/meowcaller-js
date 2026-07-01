@@ -1,0 +1,28 @@
+name: Greetings
+
+on: [pull_request_target, issues]
+
+jobs:
+  greeting:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/first-interaction@v1
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          issue-message: |
+            Thanks for opening your first issue in **meowcaller-js**! 🎉
+
+            Before you dive in, please check our [license dependency policy](CONTRIBUTING.md#license-dependencies) — every dependency must carry an OSI-approved license (MIT, Apache-2.0, BSD, ISC, Unlicense). If you're reporting a bug, include logs and a minimal reproduction if possible.
+
+          pr-message: |
+            Thanks for your first pull request to **meowcaller-js**! 🎉
+
+            A few quick checks before review:
+            - Have you read [CONTRIBUTING.md](CONTRIBUTING.md)?
+            - Every new dependency must have an OSI-approved license — see the [license policy](CONTRIBUTING.md#license-dependencies).
+            - Run `node --test` to make sure nothing is broken.
+
+            A maintainer will review your changes shortly. Thanks again!
