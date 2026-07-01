@@ -1,4 +1,9 @@
-# voiced-baileys
+# meowcaller-js
+
+[![npm](https://img.shields.io/npm/v/meowcaller-js)](https://www.npmjs.com/package/meowcaller-js)
+[![License](https://img.shields.io/github/license/bencodess/meowcaller-js)](LICENSE)
+[![Node](https://img.shields.io/node/v/meowcaller-js)](https://nodejs.org)
+[![GitHub stars](https://img.shields.io/github/stars/bencodess/meowcaller-js)](https://github.com/bencodess/meowcaller-js/stargazers)
 
 A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Pure JavaScript, no native bindings, runs wherever Node.js does.
 
@@ -10,7 +15,7 @@ A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — W
 
 ```js
 import { makeWASocket, useMultiFileAuthState } from '@whiskeysockets/baileys';
-import { Client } from 'voiced-baileys';
+import { Client } from 'meowcaller-js';
 
 const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 const wa = makeWASocket({ auth: state, printQRInTerminal: true });
