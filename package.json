@@ -1,0 +1,22 @@
+{
+  "name": "voiced-baileys",
+  "version": "0.1.0",
+  "description": "WhatsApp VoIP library for Baileys — a JavaScript port of meowcaller",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node --test src/**/*.test.js",
+    "lint": "eslint src/",
+    "typecheck": "true"
+  },
+  "keywords": ["whatsapp", "voip", "baileys", "webrtc", "call"],
+  "license": "MIT",
+  "dependencies": {
+    "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "pino": "^9.0.0",
+    "protobufjs": "^7.4.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}
