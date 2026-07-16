@@ -82,6 +82,7 @@ client.OnIncomingCall((call) => {
 - Exposed richer session lifecycle helpers such as descriptions and transition metadata.
 - Added simple source/sink adapters for audio playback and capture pipelines.
 - Added regression tests around the core lifecycle and helper APIs.
+- Configured GitHub Actions to publish on `v*` tag pushes.
 
 ## Differences from meowcaller
 
