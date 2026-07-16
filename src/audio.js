@@ -8,6 +8,20 @@ export function SinkFunc(fn) {
   return { writeFrame: (f) => { fn(f); return Promise.resolve(); }, close: () => Promise.resolve() };
 }
 
+export function SourceFunc(provider) {
+  let closed = false;
+  return {
+    async readFrame() {
+      if (closed) return null;
+      return provider();
+    },
+    close() {
+      closed = true;
+      return Promise.resolve();
+    },
+  };
+}
+
 class PcmS16Source {
   constructor(r) {
     this.r = r;

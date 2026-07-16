@@ -1,11 +1,12 @@
 {
-  "name": "voiced-baileys",
-  "version": "0.1.0",
-  "description": "WhatsApp VoIP library for Baileys — a JavaScript port of meowcaller",
+  "name": "meowcaller-js",
+  "version": "0.1.1",
+  "description": "A more complete JavaScript port of meowcaller for Baileys with richer call lifecycle helpers and media adapters",
   "main": "src/index.js",
   "type": "module",
   "scripts": {
     "test": "node --test src/**/*.test.js",
+    "test:api": "node --test src/api.test.js",
     "lint": "eslint src/",
     "typecheck": "true"
   },

@@ -4,6 +4,20 @@ export const PlayerState = Object.freeze({
   Paused: Symbol('paused'),
 });
 
+export function SourceFunc(provider) {
+  let closed = false;
+  return {
+    async readFrame() {
+      if (closed) return null;
+      return provider();
+    },
+    close() {
+      closed = true;
+      return Promise.resolve();
+    },
+  };
+}
+
 export function NewPlayer() {
   let src = null;
   let state = PlayerState.Idle;
@@ -44,14 +58,22 @@ export function NewPlayer() {
         if (frame === null) {
           src = null;
           state = PlayerState.Idle;
-          if (onFinish) setTimeout(onFinish, 0);
+          if (onFinish) {
+            const finish = onFinish;
+            onFinish = null;
+            finish();
+          }
           return null;
         }
         return frame;
       } catch {
         src = null;
         state = PlayerState.Idle;
-        if (onFinish) setTimeout(onFinish, 0);
+        if (onFinish) {
+          const finish = onFinish;
+          onFinish = null;
+          finish();
+        }
         return null;
       }
     },

@@ -33,11 +33,17 @@ export class CallSession {
     this.IsVideo = false;
     this.phase = direction === CallDirection.Incoming ? CallPhase.Ringing : CallPhase.Idle;
     this.log = opts.logger || null;
+    this.meta = opts.meta || {};
   }
 
   Phase() { return this.phase; }
   IsActive() { return this.phase === CallPhase.Active; }
   IsEnded() { return this.phase === CallPhase.Ended; }
+  Description() {
+    const label = this.Direction === CallDirection.Incoming ? 'incoming call' : 'outgoing call';
+    const peer = this.Direction === CallDirection.Incoming ? this.CallCreator : this.PeerJID;
+    return `${label} ${this.CallID} to ${peer}`;
+  }
 
   TransitionTo(next) {
     const prev = this.phase;

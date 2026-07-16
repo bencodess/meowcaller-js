@@ -15,7 +15,7 @@ A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — W
 
 ```js
 import { makeWASocket, useMultiFileAuthState } from '@whiskeysockets/baileys';
-import { Client } from 'meowcaller-js';
+import { Client, CallPhase, SinkFunc, SourceFunc } from 'meowcaller-js';
 
 const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 const wa = makeWASocket({ auth: state, printQRInTerminal: true });
@@ -24,12 +24,16 @@ const client = new Client(wa);
 client.Connect();
 
 client.OnIncomingCall((call) => {
-  call.Answer();
+  call.OnStateChange((phase) => console.log('phase:', phase.description));
   call.OnEnd((reason) => console.log('ended:', reason));
+  call.Receive(SinkFunc((frame) => console.log('audio frame', frame.length)));
+  call.Play(SourceFunc(async () => null));
+  call.Answer();
 });
 
 // Place an outbound call:
 // const call = await client.Call({}, '+15551234567');
+// console.log(client.ListCalls());
 ```
 
 ## API
@@ -39,6 +43,7 @@ client.OnIncomingCall((call) => {
 - `client.Connect()` — install call event handlers (call before WA connects)
 - `client.Call(ctx, target)` — place an outbound call
 - `client.OnIncomingCall(fn)` — handle inbound offers
+- `client.ListCalls()` / `client.GetCall(id)` — inspect live calls from the registry
 
 ### `Call`
 - `call.ID()` / `call.Peer()` / `call.State()`
@@ -50,6 +55,7 @@ client.OnIncomingCall((call) => {
 ### Audio
 - `PCMStream(readable)` — raw s16le PCM → float32 frames
 - `WAVFile(path)` — RIFF/WAV file stream
+- `SourceFunc(provider)` — simple audio source adapter for custom frame generators
 - `SinkFunc(fn)` — callback-based audio sink
 
 ### Video
@@ -67,6 +73,13 @@ client.OnIncomingCall((call) => {
 | MLow codec | 🔲 Stub — needs WASM port |
 | Opus codec | 🔲 Planned |
 | DTLS → relay | 🔲 Needs Node.js native addon or WebRTC |
+
+## New capabilities in this fork
+
+- Added a call registry so active sessions can be listed and cleaned up reliably.
+- Exposed richer session lifecycle helpers such as descriptions and transition metadata.
+- Added simple source/sink adapters for audio playback and capture pipelines.
+- Added regression tests around the core lifecycle and helper APIs.
 
 ## Differences from meowcaller
 

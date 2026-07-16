@@ -5,7 +5,7 @@ import * as stun from './stun.js';
 import * as rtp from './rtp.js';
 import * as relay from './relay.js';
 import * as signaling from './signaling.js';
-import { CallPhase, CallDirection } from './session.js';
+import { CallPhase, CallDirection, CallSession } from './session.js';
 import { FrameSamples, SampleRate } from './audio.js';
 import { NewMediaPipeline } from './media-pipeline.js';
 
@@ -123,12 +123,15 @@ export class Engine {
     const call = new Call(this, callID, peerJid);
 
     const m = this.entry(callID);
+    const session = new CallSession(callID, peerJid, selfJid, CallDirection.Outgoing, { logger: this.c.log });
     m.call = call;
+    m.session = session;
     m.callKey = callKey;
     m.selfLID = selfJid;
     m.peerLID = peerJid;
     m.creator = selfJid;
     m.direction = CallDirection.Outgoing;
+    this.c.registry?.Insert(session, call);
 
     this.c.log?.info({ callID }, 'sending offer');
     await this._sendCallNode(wa, offer);
@@ -202,12 +205,15 @@ export class Engine {
     const call = new Call(this, callID, peer);
 
     const m = this.entry(callID);
+    const session = new CallSession(callID, peer, ev.callCreator || ev.from, CallDirection.Incoming, { logger: this.c.log });
     m.call = call;
+    m.session = session;
     m.callKey = callKey;
     m.from = ev.from;
     m.creator = ev.callCreator || ev.from;
     m.direction = CallDirection.Incoming;
     m.isVideo = signaling.OfferHasVideo(ev.data);
+    this.c.registry?.Insert(session, call);
 
     call.setPhase(CallPhase.Ringing);
 
@@ -251,9 +257,11 @@ export class Engine {
     this._stopMedia(callID);
     const m = this.lookup(callID);
     if (m?.call) {
+      if (m.session) m.session.TransitionTo(CallPhase.Ended);
       m.call.setPhase(CallPhase.Ended);
       if (m.call._onEnd) m.call._onEnd(reason || 'remote_ended');
     }
+    this.c.registry?.Remove(callID);
   }
 
   _maybeStartMedia(callID) {

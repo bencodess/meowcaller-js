@@ -3,18 +3,31 @@ export class CallRegistry {
     this._calls = new Map();
   }
 
-  Insert(session) {
+  Insert(session, call = null) {
     if (this._calls.has(session.CallID)) return false;
-    this._calls.set(session.CallID, { session, mediaTask: null });
+    this._calls.set(session.CallID, { session, call, mediaTask: null });
     return true;
   }
 
   SetMediaTask(callID, cancel) {
     const entry = this._calls.get(callID);
-    if (!entry) { cancel(); return; }
+    if (!entry) { if (typeof cancel === 'function') cancel(); return; }
     const old = entry.mediaTask;
     entry.mediaTask = cancel;
     if (old) old();
+  }
+
+  Has(callID) {
+    return this._calls.has(callID);
+  }
+
+  Get(callID) {
+    const entry = this._calls.get(callID);
+    return entry ? entry : null;
+  }
+
+  List() {
+    return Array.from(this._calls.values(), (entry) => entry.call || entry.session);
   }
 
   Phase(callID) {
