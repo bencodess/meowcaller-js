@@ -11,6 +11,7 @@
     "typecheck": "true"
   },
   "keywords": ["whatsapp", "voip", "baileys", "webrtc", "call"],
+  "homepage": "https://benslogs.dev/socials/",
   "license": "MIT",
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc13",

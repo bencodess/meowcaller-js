@@ -7,6 +7,8 @@
 
 A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Pure JavaScript, no native bindings, runs wherever Node.js does.
 
+Website: https://benslogs.dev/socials/
+
 ## Status
 
 **Experimental.** Core signaling is ported; the media relay (DTLS/UDP → STUN → SRTP) requires Node.js native DTLS support or a WebRTC bridge. See [Implementation Status](#implementation-status).
