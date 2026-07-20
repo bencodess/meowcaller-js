@@ -1,92 +1,146 @@
 # meowcaller-js
 
 [![npm](https://img.shields.io/npm/v/meowcaller-js)](https://www.npmjs.com/package/meowcaller-js)
-[![License](https://img.shields.io/github/license/bencodess/meowcaller-js)](LICENSE)
+[![License: MIT](https://img.shields.io/github/license/bencodess/meowcaller-js)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/bencodess/meowcaller-js)](https://github.com/bencodess/meowcaller-js/stargazers)
 
 <p align="center">
   <img src="meowcaller-js.jpg" alt="meowcaller-js" width="1200">
 </p>
 
-A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Pure JavaScript, no native bindings, runs wherever Node.js does.
+WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Handles signaling, DTLS relay transport, SRTP media, and call lifecycle — all in JavaScript.
 
+## Install
 
-## Status
+```bash
+npm install meowcaller-js
+```
 
-**Experimental.** Signaling works. Media relay (DTLS/UDP → STUN → SRTP) is still waiting on Node.js native DTLS or a WebRTC bridge. Check the [implementation table](#implementation-status) for details.
+Requires Node.js 20+. Uses [`node-datachannel`](https://github.com/nicholasgasior/node-datachannel) (prebuilt native addon) for DTLS transport.
 
-## Usage
+## Quick Start
+
+### Receive a call
 
 ```js
 import { makeWASocket, useMultiFileAuthState } from '@whiskeysockets/baileys';
 import { Client, SinkFunc, SourceFunc } from 'meowcaller-js';
 
-const { state, saveCreds } = await useMultiFileAuthState('auth_info');
+const { state } = await useMultiFileAuthState('auth');
 const wa = makeWASocket({ auth: state, printQRInTerminal: true });
 
 const client = new Client(wa);
 client.connect();
 
 client.onIncomingCall((call) => {
+  console.log('Call from', call.peer());
+
   call.onStateChange((phase) => console.log('phase:', phase));
   call.onEnd((reason) => console.log('ended:', reason));
-  call.receive(SinkFunc((frame) => console.log('audio frame', frame.length)));
+
+  call.receive(SinkFunc((frame) => {
+    // frame: Float32Array — 960 samples at 16 kHz
+  }));
+
   call.play(SourceFunc(async () => null));
   call.answer();
 });
+```
 
-// Place an outbound call:
-// const call = await client.call({}, '+15551234567');
-// console.log(client.listCalls());
+### Place a call
+
+```js
+const call = await client.call({}, '+15551234567');
+
+call.onReady(() => {
+  console.log('media is flowing');
+  call.play(SourceFunc(async () => new Float32Array(960)));
+});
+
+call.onEnd((reason) => console.log('ended:', reason));
+```
+
+### List active calls
+
+```js
+const calls = client.listCalls();
+console.log(`${calls.length} active call(s)`);
 ```
 
 ## API
 
-### `Client`
-- `new Client(wa, opts?)` — wrap a connected `Baileys` socket
-- `client.connect()` — install call event handlers (call before WA connects)
-- `client.call(ctx, target)` — place an outbound call
-- `client.onIncomingCall(fn)` — handle inbound offers
-- `client.listCalls()` / `client.getCall(id)` — inspect live calls from the registry
+### Client
 
-### `Call`
-- `call.id()` / `call.peer()` / `call.state()`
-- `call.answer()` / `call.reject()` / `call.hangup()`
-- `call.subscribe(player)` / `call.play(source)` / `call.receive(sink)`
-- `call.receiveVideo(sink)` / `call.sendVideo(annexB)`
-- `call.onReady(fn)` / `call.onEnd(fn)` / `call.onStateChange(fn)`
+| Method | Description |
+|--------|-------------|
+| `new Client(wa, opts?)` | Wrap a connected Baileys socket |
+| `client.connect()` | Install call event handlers |
+| `client.call(ctx, target)` | Place an outbound call, returns `Promise<Call>` |
+| `client.onIncomingCall(fn)` | Register incoming call handler |
+| `client.listCalls()` | List all active calls |
+| `client.getCall(id)` | Look up a call by ID |
+
+### Call
+
+| Method | Description |
+|--------|-------------|
+| `call.id()` / `call.peer()` | Call ID and peer JID |
+| `call.state()` | Current `CallPhase` symbol |
+| `call.isVideo()` | Whether this is a video call |
+| `call.answer()` / `call.reject()` / `call.hangup()` | Call control |
+| `call.play(source)` | Play audio into the call |
+| `call.receive(sink)` | Receive incoming audio |
+| `call.receiveVideo(sink)` | Receive incoming video |
+| `call.sendVideo(annexB)` | Send H.264 access unit |
+| `call.onReady(fn)` | Fires when media is active |
+| `call.onEnd(fn)` | Fires when call terminates |
+| `call.onStateChange(fn)` | Fires on phase change |
 
 ### Audio
-- `PCMStream(readable)` — raw s16le PCM → float32 frames
-- `WAVFile(path)` — RIFF/WAV file stream
-- `SourceFunc(provider)` — simple audio source adapter for custom frame generators
-- `SinkFunc(fn)` — callback-based audio sink
+
+| Function | Description |
+|----------|-------------|
+| `SinkFunc(fn)` | Callback-based audio sink |
+| `SourceFunc(provider)` | Callback-based audio source |
+| `PCMStream(readable)` | Raw s16le PCM to float32 frames |
+| `WAVFile(path)` | WAV file source |
 
 ### Video
-- `AnnexBRecorder(path)` — record H.264 to .h264 file
-- `VideoSinkFunc(fn)` — callback-based video sink
+
+| Function | Description |
+|----------|-------------|
+| `AnnexBRecorder(path)` | Record H.264 to file |
+| `VideoSinkFunc(fn)` | Callback-based video sink |
+
+### Configuration
+
+```js
+import { WithLogger, WithDiagnostics, Recorder } from 'meowcaller-js';
+
+const diag = new Recorder('diag.jsonl');
+const client = new Client(wa, [WithLogger(log), WithDiagnostics(diag)]);
+```
 
 ## Implementation Status
 
 | Feature | Status |
 |---------|--------|
-| Outbound calls | Signal path ported |
-| Inbound calls | Signal path ported |
-| Audio calls | Signaling + media relay via DTLS/SCTP/DataChannel |
-| Video calls | Signaling + depacketizer ported |
+| Outbound calls | Signaling ported |
+| Inbound calls | Signaling ported |
+| Audio calls | Signaling + DTLS/SCTP/DataChannel media relay |
+| Video calls | Signaling + H.264 depacketizer |
+| DTLS relay | Implemented via `node-datachannel` (libdatachannel) |
 | MLow codec | Stub — needs WASM port |
 | Opus codec | Planned |
-| DTLS → relay | Implemented via `node-datachannel` (libdatachannel) |
 
-## Differences from meowcaller
+## Differences from [meowcaller](https://github.com/purpshell/meowcaller)
 
-- **Async/await** instead of goroutines + channels
+- **Async/await** instead of goroutines and channels
 - **EventEmitter** patterns instead of Go callbacks
-- **No unsafe** — no reflection-based monkey-patching
-- **No CGO** — pure JavaScript throughout
-- Call registry for listing and cleaning up active sessions
-- Source/sink adapters for piping audio in and out
-- Regression tests, GitHub Actions CI, auto-publish on `v*` tags
+- **Call registry** for listing and cleaning up active sessions
+- **Source/sink adapters** for piping audio in and out
+- **Node.js native DTLS** via `node-datachannel` (prebuilt, no CGO)
+- Tests, CI, auto-publish on push
 
 ## License
 
