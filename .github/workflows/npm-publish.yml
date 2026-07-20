@@ -2,9 +2,6 @@ name: npm Publish
 
 on:
   push:
-    tags:
-      - 'v*'
-  workflow_dispatch: {}
 
 jobs:
   publish:
