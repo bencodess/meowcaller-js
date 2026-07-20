@@ -6,6 +6,7 @@ import * as rtp from './rtp.js';
 import * as relay from './relay.js';
 import * as signaling from './signaling.js';
 import { CallPhase, CallDirection, CallSession } from './session.js';
+import { connectDtlsRelay } from './dtls.js';
 import { FrameSamples, SampleRate } from './audio.js';
 import { NewMediaPipeline } from './media-pipeline.js';
 
@@ -119,31 +120,34 @@ export class Engine {
   }
 
   async answer(callObj) {
-    const m = this.lookup(callObj.id);
-    if (!m) throw new Error(`unknown call ${callObj.id}`);
+    const id = callObj.id();
+    const m = this.lookup(id);
+    if (!m) throw new Error(`unknown call ${id}`);
     m.acceptPending = true;
     callObj.setPhase(CallPhase.Connecting);
-    this._maybeStartMedia(callObj.id);
+    this._maybeStartMedia(id);
   }
 
   async reject(callObj) {
-    const m = this.lookup(callObj.id);
-    const to = m?.from || callObj.peer;
-    const creator = m?.creator || callObj.peer;
-    const rej = signaling.BuildReject(callObj.id, to, creator);
+    const id = callObj.id();
+    const m = this.lookup(id);
+    const to = m?.from || callObj.peer();
+    const creator = m?.creator || callObj.peer();
+    const rej = signaling.BuildReject(id, to, creator);
     await this._sendCallNode(this.c.wa, rej);
-    this._stopMedia(callObj.id);
+    this._stopMedia(id);
     callObj.setPhase(CallPhase.Ended);
     if (callObj._onEnd) callObj._onEnd('rejected');
   }
 
   async hangup(callObj) {
-    const m = this.lookup(callObj.id);
-    const to = m?.from || callObj.peer;
-    const creator = m?.creator || callObj.peer;
-    const term = signaling.BuildTerminate({ CallID: callObj.id, To: to, CallCreator: creator });
+    const id = callObj.id();
+    const m = this.lookup(id);
+    const to = m?.from || callObj.peer();
+    const creator = m?.creator || callObj.peer();
+    const term = signaling.BuildTerminate({ CallID: id, To: to, CallCreator: creator });
     await this._sendCallNode(this.c.wa, term);
-    this._stopMedia(callObj.id);
+    this._stopMedia(id);
     callObj.setPhase(CallPhase.Ended);
     if (callObj._onEnd) callObj._onEnd('hangup');
   }
@@ -236,7 +240,15 @@ export class Engine {
     const addr = { address: ep.addresses[0].ipv4, port: ep.addresses[0].port };
     log?.info({ relayName: ep.relayName, addr }, 'connecting to relay');
 
-    const ch = await relay.ConnectRelayMedia(addr, { logger: log, timeout: 12000 });
+    let ch;
+    try {
+      log?.info('attempting DTLS relay connection');
+      ch = await connectDtlsRelay(addr, { logger: log, timeout: 12000 });
+      log?.info('DTLS relay connected');
+    } catch (err) {
+      log?.warn({ err: err.message }, 'DTLS failed, falling back to direct UDP');
+      ch = await relay.ConnectRelayMedia(addr, { logger: log, timeout: 12000 });
+    }
 
     const tx = crypto.randomBytes(12);
     const endpointXor = stun.EncodeXorRelayEndpoint(ep.addresses[0].ipv4, ep.addresses[0].port);

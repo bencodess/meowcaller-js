@@ -123,7 +123,7 @@ export class CallSession {
   callCreator: string;
   direction: symbol;
   isVideo: boolean;
-  phase_: symbol;
+  phase_(): symbol;
   isActive(): boolean;
   isEnded(): boolean;
   description(): string;

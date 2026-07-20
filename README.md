@@ -4,6 +4,10 @@
 [![License](https://img.shields.io/github/license/bencodess/meowcaller-js)](LICENSE)
 [![GitHub stars](https://img.shields.io/github/stars/bencodess/meowcaller-js)](https://github.com/bencodess/meowcaller-js/stargazers)
 
+<p align="center">
+  <img src="meowcaller-js.jpg" alt="meowcaller-js" width="1200">
+</p>
+
 A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Pure JavaScript, no native bindings, runs wherever Node.js does.
 
 
@@ -68,11 +72,11 @@ client.onIncomingCall((call) => {
 |---------|--------|
 | Outbound calls | Signal path ported |
 | Inbound calls | Signal path ported |
-| Audio calls | Signaling done, media relay needs DTLS |
+| Audio calls | Signaling + media relay via DTLS/SCTP/DataChannel |
 | Video calls | Signaling + depacketizer ported |
 | MLow codec | Stub — needs WASM port |
 | Opus codec | Planned |
-| DTLS → relay | Needs native addon or WebRTC |
+| DTLS → relay | Implemented via `node-datachannel` (libdatachannel) |
 
 ## Differences from meowcaller
 

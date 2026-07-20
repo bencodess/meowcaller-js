@@ -3,8 +3,8 @@ import { NewPlayer } from './player.js';
 export class Call {
   constructor(engine, id, peer) {
     this.eng = engine;
-    this.id = id;
-    this.peer = peer;
+    this._id = id;
+    this._peer = peer;
     this._phase = null;
     this._player = null;
     this._sink = null;
@@ -15,12 +15,12 @@ export class Call {
     this._onVideoState = null;
   }
 
-  id() { return this.id; }
-  peer() { return this.peer; }
+  id() { return this._id; }
+  peer() { return this._peer; }
   state() { return this._phase; }
 
   isVideo() {
-    const m = this.eng.lookup(this.id);
+    const m = this.eng.lookup(this._id);
     return m ? m.isVideo : false;
   }
 
@@ -40,7 +40,7 @@ export class Call {
   receive(sink) { this._sink = sink; }
   receiveVideo(sink) { this._videoSink = sink; }
 
-  sendVideo(accessUnit) { return this.eng.sendVideoFrame(this.id, accessUnit); }
+  sendVideo(accessUnit) { return this.eng.sendVideoFrame(this._id, accessUnit); }
 
   onReady(fn) { this._onReady = fn; }
   onEnd(fn) { this._onEnd = fn; }

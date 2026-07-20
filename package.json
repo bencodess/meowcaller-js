@@ -32,6 +32,7 @@
   ],
   "dependencies": {
     "@whiskeysockets/baileys": "^7.0.0-rc13",
+    "node-datachannel": "^0.32.3",
     "pino": "^9.0.0",
     "protobufjs": "^7.4.0"
   },
