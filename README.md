@@ -67,59 +67,9 @@ const calls = client.listCalls();
 console.log(`${calls.length} active call(s)`);
 ```
 
-## API
+## Documentation
 
-### Client
-
-| Method | Description |
-|--------|-------------|
-| `new Client(wa, opts?)` | Wrap a connected Baileys socket |
-| `client.connect()` | Install call event handlers |
-| `client.call(ctx, target)` | Place an outbound call, returns `Promise<Call>` |
-| `client.onIncomingCall(fn)` | Register incoming call handler |
-| `client.listCalls()` | List all active calls |
-| `client.getCall(id)` | Look up a call by ID |
-
-### Call
-
-| Method | Description |
-|--------|-------------|
-| `call.id()` / `call.peer()` | Call ID and peer JID |
-| `call.state()` | Current `CallPhase` symbol |
-| `call.isVideo()` | Whether this is a video call |
-| `call.answer()` / `call.reject()` / `call.hangup()` | Call control |
-| `call.play(source)` | Play audio into the call |
-| `call.receive(sink)` | Receive incoming audio |
-| `call.receiveVideo(sink)` | Receive incoming video |
-| `call.sendVideo(annexB)` | Send H.264 access unit |
-| `call.onReady(fn)` | Fires when media is active |
-| `call.onEnd(fn)` | Fires when call terminates |
-| `call.onStateChange(fn)` | Fires on phase change |
-
-### Audio
-
-| Function | Description |
-|----------|-------------|
-| `SinkFunc(fn)` | Callback-based audio sink |
-| `SourceFunc(provider)` | Callback-based audio source |
-| `PCMStream(readable)` | Raw s16le PCM to float32 frames |
-| `WAVFile(path)` | WAV file source |
-
-### Video
-
-| Function | Description |
-|----------|-------------|
-| `AnnexBRecorder(path)` | Record H.264 to file |
-| `VideoSinkFunc(fn)` | Callback-based video sink |
-
-### Configuration
-
-```js
-import { WithLogger, WithDiagnostics, Recorder } from 'meowcaller-js';
-
-const diag = new Recorder('diag.jsonl');
-const client = new Client(wa, [WithLogger(log), WithDiagnostics(diag)]);
-```
+Full API reference, examples, and guides: **[benslogs.dev/meowcaller-js/docs](https://benslogs.dev/meowcaller-js/docs/)**
 
 ## Implementation Status
 
