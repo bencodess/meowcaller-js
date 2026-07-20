@@ -11,7 +11,7 @@ Website: https://benslogs.dev/socials/
 
 ## Status
 
-**Experimental.** Core signaling is ported; the media relay (DTLS/UDP → STUN → SRTP) requires Node.js native DTLS support or a WebRTC bridge. See [Implementation Status](#implementation-status).
+**Experimental.** Signaling works. Media relay (DTLS/UDP → STUN → SRTP) is still waiting on Node.js native DTLS or a WebRTC bridge. Check the [implementation table](#implementation-status) for details.
 
 ## Usage
 
@@ -68,21 +68,13 @@ client.OnIncomingCall((call) => {
 
 | Feature | Status |
 |---------|--------|
-| Outbound calls | ✅ Signal path ported |
-| Inbound calls | ✅ Signal path ported |
-| Audio calls | ✅ Signaling, ⚠️ Media relay needs DTLS |
-| Video calls | ⚠️ Signaling + depacketizer ported |
-| MLow codec | 🔲 Stub — needs WASM port |
-| Opus codec | 🔲 Planned |
-| DTLS → relay | 🔲 Needs Node.js native addon or WebRTC |
-
-## New capabilities in this fork
-
-- Added a call registry so active sessions can be listed and cleaned up reliably.
-- Exposed richer session lifecycle helpers such as descriptions and transition metadata.
-- Added simple source/sink adapters for audio playback and capture pipelines.
-- Added regression tests around the core lifecycle and helper APIs.
-- Configured GitHub Actions to publish on `v*` tag pushes.
+| Outbound calls | Signal path ported |
+| Inbound calls | Signal path ported |
+| Audio calls | Signaling done, media relay needs DTLS |
+| Video calls | Signaling + depacketizer ported |
+| MLow codec | Stub — needs WASM port |
+| Opus codec | Planned |
+| DTLS → relay | Needs native addon or WebRTC |
 
 ## Differences from meowcaller
 
@@ -90,6 +82,9 @@ client.OnIncomingCall((call) => {
 - **EventEmitter** patterns instead of Go callbacks
 - **No unsafe** — no reflection-based monkey-patching
 - **No CGO** — pure JavaScript throughout
+- Call registry for listing and cleaning up active sessions
+- Source/sink adapters for piping audio in and out
+- Regression tests, GitHub Actions CI, auto-publish on `v*` tags
 
 ## License
 
