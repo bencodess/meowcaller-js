@@ -92,6 +92,6 @@ Full API reference, examples, and guides: **[benslogs.dev/meowcaller-js/docs](ht
 - **Node.js native DTLS** via `node-datachannel` (prebuilt, no CGO)
 - Tests, CI, auto-publish on push
 
-## License
+### License
 
 MIT
