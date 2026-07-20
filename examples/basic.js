@@ -14,14 +14,13 @@ async function main() {
   });
 
   const meow = new Client(wa, { logger });
-  meow.Connect();
+  meow.connect();
 
-  // Register incoming call handler
-  meow.OnIncomingCall((call) => {
-    logger.info({ callID: call.ID(), peer: call.Peer() }, 'Incoming call');
+  meow.onIncomingCall((call) => {
+    logger.info({ callID: call.id(), peer: call.peer() }, 'incoming call');
 
-    call.Answer();
-    call.OnEnd((reason) => logger.info({ callID: call.ID(), reason }, 'Call ended'));
+    call.answer();
+    call.onEnd((reason) => logger.info({ callID: call.id(), reason }, 'call ended'));
   });
 
   wa.ev.on('creds.update', saveCreds);
@@ -35,10 +34,10 @@ async function main() {
     }
   });
 
-  // Example: place an outbound call
-  // const call = await meow.Call({}, '+15551234567');
-  // call.OnReady(() => logger.info('call connected!'));
-  // call.OnEnd((reason) => logger.info('call ended:', reason));
+  // place an outbound call
+  // const call = await meow.call({}, '+15551234567');
+  // call.onReady(() => logger.info('call connected!'));
+  // call.onEnd((reason) => logger.info('call ended:', reason));
 }
 
 main().catch(console.error);

@@ -73,7 +73,7 @@ export class RtpStream {
   }
 }
 
-export function DeriveWasmParticipantSsrc(callID, participantID, slotWord, log) {
+export function DeriveWasmParticipantSsrc(callID, participantID, slotWord) {
   const MAX_U32 = 0xFFFFFFFF;
   const slotByte = slotWord & 0xFF;
 
@@ -81,7 +81,6 @@ export function DeriveWasmParticipantSsrc(callID, participantID, slotWord, log) 
   const hash = crypto.createHash('sha256').update(input).digest();
   const ssrcBytes = hash.subarray(0, 4);
 
-  // Remove the slot marker: zero out the least significant byte and OR the slot.
   const base = (ssrcBytes.readUInt32BE(0) >>> 0) & 0xFFFFFF00;
   const candidate = (base | slotByte) >>> 0;
 
@@ -150,14 +149,12 @@ export function SplitAnnexB(au) {
 export function PackageH264NALU(nalu) {
   const typ = nalu[0] & 0x1F;
   if (typ <= 23) {
-    // Single NALU
     const pkt = Buffer.alloc(2 + nalu.length);
-    pkt[0] = 0; pkt[1] = 0; // FU indicator placeholder
+    pkt[0] = 0; pkt[1] = 0;
     nalu.copy(pkt, 2);
     return [pkt];
   }
   if (typ === 28) {
-    // FU-A already fragmented
     return [nalu];
   }
   return [nalu];

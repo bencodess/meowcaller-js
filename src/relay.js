@@ -9,7 +9,6 @@ export const RelayPacketUnknown = 2;
 export function ClassifyRelayPacket(pkt) {
   if (pkt.length < 2) return RelayPacketUnknown;
   const first = pkt[0];
-  const second = pkt[1];
   if ((first & 0xC0) === 0x80) return RelayPacketRtp;
   if (first === 0x00 || first === 0x01) return RelayPacketStun;
   return RelayPacketUnknown;
@@ -47,7 +46,7 @@ export class RelayMediaChannel {
     });
   }
 
-  async Send(data) {
+  async send(data) {
     if (this._closed) return 0;
     const buf = Buffer.isBuffer(data) ? data : Buffer.from(data);
     return new Promise((resolve, reject) => {
@@ -58,7 +57,7 @@ export class RelayMediaChannel {
     });
   }
 
-  async Recv(buf) {
+  async recv(buf) {
     if (this._recvQueue.length > 0) {
       const msg = this._recvQueue.shift();
       const n = Math.min(msg.length, buf.length);
@@ -75,14 +74,14 @@ export class RelayMediaChannel {
     });
   }
 
-  Close() {
+  close() {
     this._closed = true;
     this.socket.close();
   }
 }
 
 export async function ConnectRelayMedia(addr, opts = {}) {
-  const log = opts.logger || null;
+  const log = opts.logger;
   const timeoutMs = opts.timeout || 12000;
   return new Promise((resolve, reject) => {
     const socket = dgram.createSocket('udp4');
@@ -97,7 +96,7 @@ export async function ConnectRelayMedia(addr, opts = {}) {
       }
     });
 
-    socket.on('message', (msg) => {
+    socket.on('message', () => {
       if (!resolved) {
         resolved = true;
         if (timer) clearTimeout(timer);

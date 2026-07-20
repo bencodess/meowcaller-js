@@ -13,60 +13,54 @@ export const CallPhase = Object.freeze({
 });
 
 const phaseName = (p) => {
-  switch (p) {
-    case CallPhase.Idle: return 'idle';
-    case CallPhase.Calling: return 'calling';
-    case CallPhase.Ringing: return 'ringing';
-    case CallPhase.Connecting: return 'connecting';
-    case CallPhase.Active: return 'active';
-    case CallPhase.Ended: return 'ended';
-    default: return 'unknown';
+  for (const [name, sym] of Object.entries(CallPhase)) {
+    if (sym === p) return name.toLowerCase();
   }
+  return 'unknown';
 };
 
 export class CallSession {
   constructor(callID, peerJID, callCreator, direction, opts = {}) {
-    this.CallID = callID;
-    this.PeerJID = peerJID;
-    this.CallCreator = callCreator;
-    this.Direction = direction;
-    this.IsVideo = false;
+    this.callID = callID;
+    this.peerJID = peerJID;
+    this.callCreator = callCreator;
+    this.direction = direction;
+    this.isVideo = false;
     this.phase = direction === CallDirection.Incoming ? CallPhase.Ringing : CallPhase.Idle;
     this.log = opts.logger || null;
     this.meta = opts.meta || {};
   }
 
-  Phase() { return this.phase; }
-  IsActive() { return this.phase === CallPhase.Active; }
-  IsEnded() { return this.phase === CallPhase.Ended; }
-  Description() {
-    const label = this.Direction === CallDirection.Incoming ? 'incoming call' : 'outgoing call';
-    const peer = this.Direction === CallDirection.Incoming ? this.CallCreator : this.PeerJID;
-    return `${label} ${this.CallID} to ${peer}`;
+  phase_() { return this.phase; }
+  isActive() { return this.phase === CallPhase.Active; }
+  isEnded() { return this.phase === CallPhase.Ended; }
+
+  description() {
+    const label = this.direction === CallDirection.Incoming ? 'incoming' : 'outgoing';
+    const peer = this.direction === CallDirection.Incoming ? this.callCreator : this.peerJID;
+    return `${label} call ${this.callID} to ${peer}`;
   }
 
-  TransitionTo(next) {
+  transitionTo(next) {
     const prev = this.phase;
-    let ok = false;
-    if (this.phase === CallPhase.Ended) {
-      ok = false;
-    } else if (next === CallPhase.Ended) {
-      ok = true;
-    } else if (this.phase === CallPhase.Idle && next === CallPhase.Calling) {
-      ok = this.Direction === CallDirection.Outgoing;
-    } else if (this.phase === CallPhase.Calling && next === CallPhase.Ringing) {
-      ok = true;
-    } else if (this.phase === CallPhase.Ringing && next === CallPhase.Connecting) {
-      ok = true;
-    } else if (this.phase === CallPhase.Connecting && next === CallPhase.Active) {
-      ok = true;
-    } else if (this.phase === next) {
-      ok = true;
-    }
+    const ok = canTransition(this.direction, this.phase, next);
     if (ok) {
       this.phase = next;
-      if (this.log) this.log.debug({ call_id: this.CallID, from: phaseName(prev), to: phaseName(next) }, 'phase transition');
+      if (this.log) {
+        this.log.debug({ call_id: this.callID, from: phaseName(prev), to: phaseName(next) }, 'phase transition');
+      }
     }
     return ok;
   }
+}
+
+function canTransition(direction, from, to) {
+  if (from === CallPhase.Ended) return false;
+  if (to === CallPhase.Ended) return true;
+  if (from === to) return true;
+  if (from === CallPhase.Idle && to === CallPhase.Calling) return direction === CallDirection.Outgoing;
+  if (from === CallPhase.Calling && to === CallPhase.Ringing) return true;
+  if (from === CallPhase.Ringing && to === CallPhase.Connecting) return true;
+  if (from === CallPhase.Connecting && to === CallPhase.Active) return true;
+  return false;
 }

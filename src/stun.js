@@ -30,16 +30,15 @@ export function StunTransactionID(pkt) {
   return [tx, true];
 }
 
-export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey, log) {
+export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey) {
   const msg = Buffer.alloc(20);
   msg.writeUInt16BE(MsgAllocateRequest, 0);
-  msg.writeUInt16BE(0, 2); // length placeholder
+  msg.writeUInt16BE(0, 2);
   msg.writeUInt32BE(magicCookie, 4);
   tx.copy(msg, 8, 0, 12);
 
   const attrs = [];
 
-  // XOR-RELAY-ENDPOINT
   if (xorEndpoint) {
     const xBuf = Buffer.alloc(8);
     xBuf.writeUInt16BE(AttrXorRelayEndpoint, 0);
@@ -48,14 +47,12 @@ export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey, l
     attrs.push(xBuf);
   }
 
-  // REQUESTED-TRANSPORT (UDP)
   const rtBuf = Buffer.alloc(8);
   rtBuf.writeUInt16BE(AttrRequestedTransport, 0);
   rtBuf.writeUInt16BE(4, 2);
   rtBuf.writeUInt32BE(0x11000000, 4);
   attrs.push(rtBuf);
 
-  // TOKEN
   if (token) {
     const tkBuf = Buffer.alloc(4 + token.length);
     tkBuf.writeUInt16BE(0x0023, 0);
@@ -64,7 +61,6 @@ export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey, l
     attrs.push(tkBuf);
   }
 
-  // MESSAGE-INTEGRITY
   const full = Buffer.concat([msg, ...attrs]);
   const miLen = 24;
   const miBuf = Buffer.alloc(4 + miLen);
@@ -82,7 +78,6 @@ export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey, l
 
   const finalAttrs = [...attrs.map(a => a.subarray(0, a.length)), miBuf];
 
-  // FINGERPRINT
   const finalFull = Buffer.concat([msg, ...finalAttrs]);
   const fpLen = 8;
   const fpStart = finalFull.length;
@@ -98,16 +93,16 @@ export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey, l
   return fpFull;
 }
 
-export function BuildWhatsappPing(tx, log) {
+export function BuildWhatsappPing(tx) {
   const msg = Buffer.alloc(20);
-  msg.writeUInt16BE(0x0801, 0); // WhatsApp ping type
+  msg.writeUInt16BE(0x0801, 0);
   msg.writeUInt16BE(0, 2);
   msg.writeUInt32BE(magicCookie, 4);
   tx.copy(msg, 8, 0, 12);
   return msg;
 }
 
-export function EncodeStunRequest(msgType, tx, attrs, relayKey, addFingerprint, log) {
+export function EncodeStunRequest(msgType, tx, attrs, relayKey, addFingerprint) {
   const msgLen = 20 + (attrs ? attrs.reduce((a, b) => a + b.length, 0) : 0);
   const msg = Buffer.alloc(20);
   msg.writeUInt16BE(msgType, 0);
@@ -151,7 +146,7 @@ export function EncodeStunRequest(msgType, tx, attrs, relayKey, addFingerprint, 
   return body;
 }
 
-export function EncodeXorRelayEndpoint(ipv4, port, log) {
+export function EncodeXorRelayEndpoint(ipv4, port) {
   const ipParts = ipv4.split('.').map(Number);
   if (ipParts.length !== 4) return null;
   const ipInt = ((ipParts[0] << 24) | (ipParts[1] << 16) | (ipParts[2] << 8) | ipParts[3]) >>> 0;

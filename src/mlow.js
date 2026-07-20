@@ -1,19 +1,15 @@
-// MLow codec stub — the actual MLow codec implementation is a pure-Go
-// audio codec. In JavaScript, this would need to be ported or provided
-// via WebAssembly. For now, this is a passthrough that preserves the API.
+// MLow codec stub — the real implementation is a Go audio codec.
+// Needs a WASM port to work in JS. This is a passthrough that
+// preserves the API surface so callers can be written against it.
 //
-// The full MLow codec is defined in the meowcaller/mlow package:
-//   https://github.com/purpshell/meowcaller/tree/main/mlow
-//
-// MLow operates on 16 kHz mono float32 PCM frames of 960 samples (60 ms).
+// MLow: 16 kHz mono float32 PCM, 960 samples per frame (60 ms)
 
 export class MlowEncoder {
   constructor(opts = {}) {
-    this.log = opts.logger || null;
+    this.log = opts.logger;
   }
 
-  Encode(frame) {
-    // Placeholder: convert float32 PCM to bytes
+  encode(frame) {
     const buf = Buffer.alloc(frame.length * 4);
     for (let i = 0; i < frame.length; i++) {
       buf.writeFloatLE(frame[i], i * 4);
@@ -24,11 +20,10 @@ export class MlowEncoder {
 
 export class MlowDecoder {
   constructor(opts = {}) {
-    this.log = opts.logger || null;
+    this.log = opts.logger;
   }
 
-  Decode(payload) {
-    // Placeholder: convert bytes back to float32 PCM
+  decode(payload) {
     const sampleCount = Math.floor(payload.length / 4);
     const frame = new Float32Array(sampleCount);
     for (let i = 0; i < sampleCount; i++) {

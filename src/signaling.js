@@ -1,5 +1,3 @@
-import crypto from 'node:crypto';
-
 export const CapabilityOffer = Buffer.from(
   'AAAAAElQAAAASVNJUEVSVEVTVEVSUFY9MC4zLjIyNjUuMCwgU1RDX1NUUlNFUlZFUj0yMCwgU1RDX1NUUlNfU0laRT0xMDQ4NTc2LCBUQ1BfU1RSU0VSVkVSPTIwLCBUQ1BfU1RSU1NJWkU9MTU3Mjg2NCwgVFVSTl9TVFJTRVJWRVI9MjAsIFRVUk5fU1RSU1NJWkU9NjU1MzYsIFNSQ1JPRVJfTE9DQUxfRElBTUVEPTE2OTUxMjI5NzI=',
   'base64'
@@ -154,7 +152,7 @@ export function OfferHasVideo(data) {
   return kids.some((c) => c.tag === 'video');
 }
 
-export function ParseVoipSettings(content, logger) {
+export function ParseVoipSettings(content) {
   // voip_settings is a protobuf; stub parsing for codec selection
   try {
     const json = JSON.parse(content.toString('utf8'));

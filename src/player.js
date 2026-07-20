@@ -4,52 +4,37 @@ export const PlayerState = Object.freeze({
   Paused: Symbol('paused'),
 });
 
-export function SourceFunc(provider) {
-  let closed = false;
-  return {
-    async readFrame() {
-      if (closed) return null;
-      return provider();
-    },
-    close() {
-      closed = true;
-      return Promise.resolve();
-    },
-  };
-}
-
 export function NewPlayer() {
   let src = null;
   let state = PlayerState.Idle;
   let onFinish = null;
-  let mu = null; // using closure pattern instead of mutex
 
   const self = {
-    Play(source) {
+    play(source) {
       const old = src;
       src = source;
       state = PlayerState.Playing;
       if (old && typeof old.close === 'function') old.close().catch(() => {});
     },
 
-    Pause() {
+    pause() {
       if (state === PlayerState.Playing) state = PlayerState.Paused;
     },
 
-    Resume() {
+    resume() {
       if (state === PlayerState.Paused) state = PlayerState.Playing;
     },
 
-    Stop() {
+    stop() {
       const old = src;
       src = null;
       state = PlayerState.Idle;
       if (old && typeof old.close === 'function') old.close().catch(() => {});
     },
 
-    State() { return state; },
+    state() { return state; },
 
-    OnFinish(fn) { onFinish = fn; },
+    onFinish(fn) { onFinish = fn; },
 
     async nextFrame() {
       if (state !== PlayerState.Playing || !src) return null;

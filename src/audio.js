@@ -5,7 +5,10 @@ export const SampleRate = 16000;
 export const FrameSamples = 960;
 
 export function SinkFunc(fn) {
-  return { writeFrame: (f) => { fn(f); return Promise.resolve(); }, close: () => Promise.resolve() };
+  return {
+    writeFrame(f) { fn(f); return Promise.resolve(); },
+    close() { return Promise.resolve(); },
+  };
 }
 
 export function SourceFunc(provider) {
@@ -59,7 +62,7 @@ export function PCMStream(r) {
 export async function WAVFile(path) {
   const f = createReadStream(path);
   const wr = await newWavReader(f);
-  const res = newDownmixResampler(wr.sampleRate, wr.channels);
+  const res = new DownmixResampler(wr.sampleRate, wr.channels);
   const buf = Buffer.alloc(8192);
   let pending = [];
   let done = false;
@@ -67,7 +70,7 @@ export async function WAVFile(path) {
 
   async function read() {
     while (pending.length < FrameSamples && !done && !closed) {
-      const n = await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         f.once('readable', () => {
           const chunk = f.read(buf.length);
           if (chunk === null) return resolve(0);
@@ -95,7 +98,7 @@ export async function WAVFile(path) {
 
   return {
     readFrame: read,
-    close: () => { closed = true; f.destroy(); },
+    close() { closed = true; f.destroy(); },
   };
 }
 
@@ -167,16 +170,15 @@ function readExact(r, n) {
   });
 }
 
-export async function MP3File(path) {
-  const mod = await import('@whiskeysockets/baileys');
-  throw new Error('MP3File not yet implemented; use PCMStream with an external decoder');
+export async function MP3File() {
+  throw new Error('MP3File not yet implemented — use PCMStream with an external decoder');
 }
 
-export async function OpusFile(path) {
-  throw new Error('OpusFile not yet implemented; use PCMStream with an external decoder');
+export async function OpusFile() {
+  throw new Error('OpusFile not yet implemented — use PCMStream with an external decoder');
 }
 
-export class downmixResampler {
+class DownmixResampler {
   constructor(inRate, channels) {
     this.inRate = inRate;
     this.channels = channels;

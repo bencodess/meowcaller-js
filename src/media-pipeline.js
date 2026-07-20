@@ -1,7 +1,7 @@
 import * as srtp from './srtp.js';
 import * as rtp from './rtp.js';
 
-export class NewMediaPipeline {
+export class MediaPipeline {
   constructor(callKey, selfJID, peerJID, ssrc, samplesPerPacket) {
     this.sendKeys = srtp.DeriveE2eKeys(callKey, rtp.FormatE2ESrtpParticipantID(selfJID));
     this.recvKeys = srtp.DeriveE2eKeys(callKey, rtp.FormatE2ESrtpParticipantID(peerJID));
@@ -40,4 +40,8 @@ export class NewMediaPipeline {
     const plain = srtp.CryptPayload(this.recvKeys, header.Ssrc, header.SequenceNumber, roc, payload);
     return [header, plain, true];
   }
+}
+
+export function NewMediaPipeline(callKey, selfJID, peerJID, ssrc, samplesPerPacket) {
+  return new MediaPipeline(callKey, selfJID, peerJID, ssrc, samplesPerPacket);
 }

@@ -3,9 +3,6 @@ import { Buffer } from 'node:buffer';
 
 export const WarpMITagLen = 10;
 
-const LOG2_MAX_PACKET = 15;
-const MAX_PACKET = 1 << LOG2_MAX_PACKET;
-
 export class E2eSrtpKeys {
   constructor() {
     this.CipherKey = null;
@@ -21,7 +18,6 @@ export class RocTracker {
   }
 
   Advance(seq) {
-    const srtpIndex = ((BigInt(this.roc) << 16n) | BigInt(seq)) >>> 0n;
     if (seq === 0) this.roc++;
     return this.roc;
   }

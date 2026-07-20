@@ -15,37 +15,37 @@ export class Call {
     this._onVideoState = null;
   }
 
-  ID() { return this.id; }
-  Peer() { return this.peer; }
-  State() { return this._phase; }
+  id() { return this.id; }
+  peer() { return this.peer; }
+  state() { return this._phase; }
 
-  IsVideo() {
+  isVideo() {
     const m = this.eng.lookup(this.id);
     return m ? m.isVideo : false;
   }
 
-  Answer() { return this.eng.answer(this); }
-  Reject() { return this.eng.reject(this); }
-  Hangup() { return this.eng.hangup(this); }
+  answer() { return this.eng.answer(this); }
+  reject() { return this.eng.reject(this); }
+  hangup() { return this.eng.hangup(this); }
 
-  Subscribe(p) { this._player = p; }
+  subscribe(p) { this._player = p; }
 
-  Play(src) {
+  play(src) {
     const p = NewPlayer();
-    this.Subscribe(p);
-    p.Play(src);
+    this.subscribe(p);
+    p.play(src);
     return p;
   }
 
-  Receive(sink) { this._sink = sink; }
-  ReceiveVideo(sink) { this._videoSink = sink; }
+  receive(sink) { this._sink = sink; }
+  receiveVideo(sink) { this._videoSink = sink; }
 
-  SendVideo(accessUnit) { return this.eng.sendVideoFrame(this.id, accessUnit); }
+  sendVideo(accessUnit) { return this.eng.sendVideoFrame(this.id, accessUnit); }
 
-  OnReady(fn) { this._onReady = fn; }
-  OnEnd(fn) { this._onEnd = fn; }
-  OnStateChange(fn) { this._onState = fn; }
-  OnVideoState(fn) { this._onVideoState = fn; }
+  onReady(fn) { this._onReady = fn; }
+  onEnd(fn) { this._onEnd = fn; }
+  onStateChange(fn) { this._onState = fn; }
+  onVideoState(fn) { this._onVideoState = fn; }
 
   setPhase(next) {
     if (this._phase === next) return;

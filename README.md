@@ -15,42 +15,42 @@ A JavaScript port of [meowcaller](https://github.com/purpshell/meowcaller) — W
 
 ```js
 import { makeWASocket, useMultiFileAuthState } from '@whiskeysockets/baileys';
-import { Client, CallPhase, SinkFunc, SourceFunc } from 'meowcaller-js';
+import { Client, SinkFunc, SourceFunc } from 'meowcaller-js';
 
 const { state, saveCreds } = await useMultiFileAuthState('auth_info');
 const wa = makeWASocket({ auth: state, printQRInTerminal: true });
 
 const client = new Client(wa);
-client.Connect();
+client.connect();
 
-client.OnIncomingCall((call) => {
-  call.OnStateChange((phase) => console.log('phase:', phase.description));
-  call.OnEnd((reason) => console.log('ended:', reason));
-  call.Receive(SinkFunc((frame) => console.log('audio frame', frame.length)));
-  call.Play(SourceFunc(async () => null));
-  call.Answer();
+client.onIncomingCall((call) => {
+  call.onStateChange((phase) => console.log('phase:', phase));
+  call.onEnd((reason) => console.log('ended:', reason));
+  call.receive(SinkFunc((frame) => console.log('audio frame', frame.length)));
+  call.play(SourceFunc(async () => null));
+  call.answer();
 });
 
 // Place an outbound call:
-// const call = await client.Call({}, '+15551234567');
-// console.log(client.ListCalls());
+// const call = await client.call({}, '+15551234567');
+// console.log(client.listCalls());
 ```
 
 ## API
 
 ### `Client`
 - `new Client(wa, opts?)` — wrap a connected `Baileys` socket
-- `client.Connect()` — install call event handlers (call before WA connects)
-- `client.Call(ctx, target)` — place an outbound call
-- `client.OnIncomingCall(fn)` — handle inbound offers
-- `client.ListCalls()` / `client.GetCall(id)` — inspect live calls from the registry
+- `client.connect()` — install call event handlers (call before WA connects)
+- `client.call(ctx, target)` — place an outbound call
+- `client.onIncomingCall(fn)` — handle inbound offers
+- `client.listCalls()` / `client.getCall(id)` — inspect live calls from the registry
 
 ### `Call`
-- `call.ID()` / `call.Peer()` / `call.State()`
-- `call.Answer()` / `call.Reject()` / `call.Hangup()`
-- `call.Subscribe(player)` / `call.Play(source)` / `call.Receive(sink)`
-- `call.ReceiveVideo(sink)` / `call.SendVideo(annexB)`
-- `call.OnReady(fn)` / `call.OnEnd(fn)` / `call.OnStateChange(fn)`
+- `call.id()` / `call.peer()` / `call.state()`
+- `call.answer()` / `call.reject()` / `call.hangup()`
+- `call.subscribe(player)` / `call.play(source)` / `call.receive(sink)`
+- `call.receiveVideo(sink)` / `call.sendVideo(annexB)`
+- `call.onReady(fn)` / `call.onEnd(fn)` / `call.onStateChange(fn)`
 
 ### Audio
 - `PCMStream(readable)` — raw s16le PCM → float32 frames

@@ -1,8 +1,8 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { Client, CallPhase } from './src/index.js';
+import { Client } from './src/index.js';
 
-const logger = pino({ level: 'info', name: 'voiced' });
+const logger = pino({ level: 'info', name: 'meowcaller' });
 
 async function main() {
   const { state, saveCreds } = await useMultiFileAuthState('auth_info');
@@ -11,28 +11,27 @@ async function main() {
     auth: state,
     logger,
     printQRInTerminal: true,
-    generateHighQualityLinkPreview: false,
     syncFullHistory: false,
   });
 
   const client = new Client(wa, { logger });
 
-  client.OnIncomingCall((call) => {
-    logger.info({ id: call.ID(), peer: call.Peer(), video: call.IsVideo() }, 'incoming call');
+  client.onIncomingCall((call) => {
+    logger.info({ id: call.id(), peer: call.peer(), video: call.isVideo() }, 'incoming call');
 
-    call.OnStateChange((phase) => logger.info({ phase: phase.description }, 'call state'));
-    call.OnReady(() => logger.info('call active — media flowing'));
-    call.OnEnd((reason) => logger.info({ reason }, 'call ended'));
-    call.OnVideoState((vs) => logger.info({ active: vs.Active, upgrade: vs.Upgrade }, 'video state'));
+    call.onStateChange((phase) => logger.info({ phase: phase.description }, 'call state'));
+    call.onReady(() => logger.info('call active — media flowing'));
+    call.onEnd((reason) => logger.info({ reason }, 'call ended'));
+    call.onVideoState((vs) => logger.info({ active: vs.Active, upgrade: vs.Upgrade }, 'video state'));
 
-    call.Answer();
+    call.answer();
   });
 
   wa.ev.on('connection.update', ({ connection, lastDisconnect }) => {
     logger.info({ connection }, 'wa connection');
 
     if (connection === 'open') {
-      client.Connect();
+      client.connect();
     }
 
     if (connection === 'close') {

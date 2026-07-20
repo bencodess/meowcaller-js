@@ -30,7 +30,6 @@ export class Engine {
   install(wa) {
     if (this._installed) return;
     this._installed = true;
-    this._installCallAckHook(wa);
 
     wa.ev.on('call', async ([ev]) => {
       if (!ev) return;
@@ -47,70 +46,20 @@ export class Engine {
           break;
       }
     });
-
-    wa.ev.on('messages.upsert', async ({ messages }) => {
-      for (const msg of messages) {
-        if (msg.key.remoteJid && msg.message?.call?.callKey) {
-          // Handle callKey messages if needed
-        }
-      }
-    });
-
-    // Intercept raw call nodes (for mute_v2, video stanzas)
-    this._interceptCallRaw(wa);
-  }
-
-  _installCallAckHook(wa) {
-    wa.ev.on('call', async ([ev]) => {
-      if (!ev) return;
-      if (ev.type === 'offer' && ev.status === 'ack') {
-        this._onCallAck(wa, ev);
-      }
-    });
-  }
-
-  _onCallAck(wa, ev) {
-    const callID = ev.callId;
-    if (ev.error) {
-      this.c.log?.warn({ callID, error: ev.error }, 'call rejected by server');
-      this._stopMedia(callID);
-      const m = this.lookup(callID);
-      if (m?.call) {
-        m.call.setPhase(CallPhase.Ended);
-        if (m.call._onEnd) m.call._onEnd('server:' + ev.error);
-      }
-      return;
-    }
-    // Relay allocation might arrive in the ack
-    if (ev.data) this._onRelay(wa, callID, ev.data);
-  }
-
-  _interceptCallRaw(wa) {
-    const origSend = wa.sendMessage;
-    const self = this;
-    wa.sendMessage = async function (...args) {
-      // This hook is for intercepting raw call nodes; since Baileys
-      // doesn't expose a raw node handler like whatsmeow, we rely on
-      // the 'call' event for signaling. For mute_v2/video stanzas
-      // the integrator should use the Baileys 'call' event directly.
-      return origSend.apply(this, args);
-    };
   }
 
   async placeCall(ctx, target) {
     const wa = this.c.wa;
     const selfJid = wa.user?.id;
-    if (!selfJid) throw new Error('no own JID');
+    if (!selfJid) throw new Error('not connected — no own JID');
 
-    const peerJid = await this._resolvePeerLID(ctx, wa, target);
-    this.c.log?.info({ peerLid: peerJid, selfLid: selfJid }, 'resolved peer LID');
+    const peerJid = this._resolvePeerJid(target);
+    this.c.log?.info({ peerLid: peerJid, selfLid: selfJid }, 'resolved peer');
 
-    const { Baileys: { jidEncode, jidDecode } } = await import('@whiskeysockets/baileys');
     const callKey = crypto.randomBytes(32);
     const callID = newCallID();
 
-    // Encrypt callKey for peer devices (simplified - in production, iterate devices)
-    const deviceKeys = await this._encryptCallKeyForDevice(ctx, wa, peerJid, callKey);
+    const deviceKeys = this._encryptCallKeyForDevice(peerJid, callKey);
 
     const offer = signaling.BuildOffer({
       CallID: callID,
@@ -131,7 +80,7 @@ export class Engine {
     m.peerLID = peerJid;
     m.creator = selfJid;
     m.direction = CallDirection.Outgoing;
-    this.c.registry?.Insert(session, call);
+    this.c.registry?.insert(session, call);
 
     this.c.log?.info({ callID }, 'sending offer');
     await this._sendCallNode(wa, offer);
@@ -139,31 +88,34 @@ export class Engine {
     return call;
   }
 
-  async _resolvePeerLID(ctx, wa, target) {
-    const { jidDecode, areJidsSame } = await import('@whiskeysockets/baileys');
+  _resolvePeerJid(target) {
     if (target.includes('@')) return target;
     const pn = target.startsWith('+') ? target.slice(1) : target;
     return `${pn}@s.whatsapp.net`;
   }
 
-  async _encryptCallKeyForDevice(ctx, wa, deviceJid, callKey) {
-    const ct = callKey; // Simplified: in production, actually encrypt via Signal session
-    return [{ DeviceJid: deviceJid, Ciphertext: ct, EncType: 'pkmsg' }];
+  _encryptCallKeyForDevice(deviceJid, callKey) {
+    // TODO: encrypt via Signal session for each target device
+    return [{ DeviceJid: deviceJid, Ciphertext: callKey, EncType: 'pkmsg' }];
   }
 
   async _sendCallNode(wa, node) {
-    const { generateMessageID } = await import('@whiskeysockets/baileys');
-    const id = generateMessageID();
-    node.attrs = { ...node.attrs, id };
-    const stanza = this._buildCallStanza(node);
-    // Send via WebSocket
-    if (wa.ws && wa.ws.readyState === 1) {
-      wa.ws.send(JSON.stringify(stanza));
+    if (typeof wa.sendNode === 'function') {
+      await wa.sendNode(node);
+      return;
     }
-  }
 
-  _buildCallStanza(node) {
-    return { tag: 'call', attrs: node.attrs, content: node.content };
+    // Fallback: use the raw WebSocket with WhatsApp's binary encoding
+    const { encodeBinaryNode } = await import('@whiskeysockets/baileys');
+    const id = crypto.randomBytes(12).toString('hex').toUpperCase();
+    node.attrs = { ...node.attrs, id };
+
+    if (wa.ws && wa.ws.isOpen) {
+      const encoded = encodeBinaryNode(node);
+      wa.ws.send(encoded);
+    } else {
+      this.c.log?.warn('cannot send call node — WebSocket not open');
+    }
   }
 
   async answer(callObj) {
@@ -198,27 +150,26 @@ export class Engine {
 
   _onOffer(wa, ev) {
     const callID = ev.callId;
-    const callKey = crypto.randomBytes(32); // Simplified: decrypt from enc node
+    const callKey = crypto.randomBytes(32);
     const peer = ev.callCreator || ev.from;
 
     this.c.log?.info({ callID, peer }, 'incoming offer');
     const call = new Call(this, callID, peer);
 
     const m = this.entry(callID);
-    const session = new CallSession(callID, peer, ev.callCreator || ev.from, CallDirection.Incoming, { logger: this.c.log });
+    const session = new CallSession(callID, peer, peer, CallDirection.Incoming, { logger: this.c.log });
     m.call = call;
     m.session = session;
     m.callKey = callKey;
     m.from = ev.from;
-    m.creator = ev.callCreator || ev.from;
+    m.creator = peer;
     m.direction = CallDirection.Incoming;
     m.isVideo = signaling.OfferHasVideo(ev.data);
-    this.c.registry?.Insert(session, call);
+    this.c.registry?.insert(session, call);
 
     call.setPhase(CallPhase.Ringing);
 
-    // Send preaccept
-    this._sendPreaccept(wa, callID, ev.from, ev.callCreator || ev.from);
+    this._sendPreaccept(wa, callID, ev.from, peer);
 
     if (this.c._onIncomingCall) {
       this.c._onIncomingCall(call);
@@ -228,7 +179,7 @@ export class Engine {
   async _sendPreaccept(wa, callID, to, creator) {
     const pre = {
       tag: 'call',
-      attrs: { to: to.toString(), id: wa.generateMessageID?.() || crypto.randomUUID() },
+      attrs: { to: to.toString(), id: crypto.randomBytes(12).toString('hex') },
       content: [{
         tag: 'preaccept',
         attrs: { 'call-id': callID, 'call-creator': creator.toString() },
@@ -239,9 +190,7 @@ export class Engine {
         ],
       }],
     };
-    if (wa.ws?.readyState === 1) {
-      wa.ws.send(JSON.stringify(pre));
-    }
+    await this._sendCallNode(wa, pre);
   }
 
   _onRelay(wa, callID, data) {
@@ -257,11 +206,11 @@ export class Engine {
     this._stopMedia(callID);
     const m = this.lookup(callID);
     if (m?.call) {
-      if (m.session) m.session.TransitionTo(CallPhase.Ended);
+      if (m.session) m.session.transitionTo(CallPhase.Ended);
       m.call.setPhase(CallPhase.Ended);
       if (m.call._onEnd) m.call._onEnd(reason || 'remote_ended');
     }
-    this.c.registry?.Remove(callID);
+    this.c.registry?.remove(callID);
   }
 
   _maybeStartMedia(callID) {
@@ -289,35 +238,33 @@ export class Engine {
 
     const ch = await relay.ConnectRelayMedia(addr, { logger: log, timeout: 12000 });
 
-    // Send allocate
     const tx = crypto.randomBytes(12);
     const endpointXor = stun.EncodeXorRelayEndpoint(ep.addresses[0].ipv4, ep.addresses[0].port);
     const allocate = stun.BuildWasmStunAllocateRequest(tx, rd.relayTokens[ep.tokenID],
-      endpointXor, rd.relayKeyASCII, log);
-    await ch.Send(allocate);
+      endpointXor, rd.relayKeyASCII);
+    await ch.send(allocate);
 
-    // Consent ping
     const ptx = crypto.randomBytes(12);
-    const initPing = stun.BuildWhatsappPing(ptx, log);
-    await ch.Send(initPing);
+    const initPing = stun.BuildWhatsappPing(ptx);
+    await ch.send(initPing);
 
-    const ssrc = rtp.DeriveWasmParticipantSsrc(callID, rtp.FormatE2ESrtpParticipantID(selfLID), 0, log);
+    const ssrc = rtp.DeriveWasmParticipantSsrc(callID, rtp.FormatE2ESrtpParticipantID(selfLID), 0);
     log?.info({ ssrc: '0x' + ssrc.toString(16).padStart(8, '0') }, 'media SSRC');
 
     const txPipe = new NewMediaPipeline(callKey, selfLID, peerLID, ssrc, FrameSamples);
     const rxPipe = new NewMediaPipeline(callKey, selfLID, peerLID, ssrc, FrameSamples);
 
-    // Keepalive ticker
     const keepaliveTimer = setInterval(async () => {
       if (signal.aborted) { clearInterval(keepaliveTimer); return; }
       try {
         const ktx = crypto.randomBytes(12);
-        await ch.Send(allocate);
-        await ch.Send(stun.BuildWhatsappPing(ktx, log));
-      } catch {}
+        await ch.send(allocate);
+        await ch.send(stun.BuildWhatsappPing(ktx));
+      } catch (err) {
+        log?.debug({ err: err.message }, 'keepalive failed');
+      }
     }, 1000);
 
-    // Send loop
     const frameInterval = (FrameSamples / SampleRate) * 1000;
     const sendTimer = setInterval(async () => {
       if (signal.aborted) { clearInterval(sendTimer); return; }
@@ -327,24 +274,25 @@ export class Engine {
         if (player) frame = await player.nextFrame();
         if (!frame) frame = new Float32Array(FrameSamples);
 
-        const payload = Buffer.from(frame.buffer); // Simplified: actual MLow encode
-        const packet = await txPipe.ProtectAudio(payload);
-        await ch.Send(packet);
-      } catch {}
+        const pcmBytes = Buffer.from(frame.buffer);
+        const packet = await txPipe.ProtectAudio(pcmBytes);
+        await ch.send(packet);
+      } catch (err) {
+        log?.debug({ err: err.message }, 'audio send failed');
+      }
     }, frameInterval);
 
-    // Receive loop
     const recvBuf = Buffer.alloc(1500);
     signal.addEventListener('abort', () => {
       clearInterval(keepaliveTimer);
       clearInterval(sendTimer);
-      ch.Close();
+      ch.close();
     });
 
     try {
       let rtpIn = 0;
       while (!signal.aborted) {
-        const n = await ch.Recv(recvBuf);
+        const n = await ch.recv(recvBuf);
         if (signal.aborted) break;
         const pkt = recvBuf.subarray(0, n);
         const isRTP = relay.ClassifyRelayPacket(pkt) === relay.RelayPacketRtp;
@@ -353,18 +301,15 @@ export class Engine {
           if (isStun && mt === stun.MsgBindingRequest) {
             const [txId] = stun.StunTransactionID(pkt);
             if (txId) {
-              const resp = stun.EncodeStunRequest(stun.MsgBindingSuccess, txId, null, rd.relayKeyASCII, true, log);
-              await ch.Send(resp);
+              const resp = stun.EncodeStunRequest(stun.MsgBindingSuccess, txId, null, rd.relayKeyASCII, true);
+              await ch.send(resp);
             }
           }
           continue;
         }
 
-        // Parse and unprotect RTP
-        const [result, payload] = this._unprotectAndDecode(rxPipe, pkt);
+        const [result, plain] = this._unprotectAndDecode(rxPipe, pkt);
         if (!result) continue;
-
-        const [hdr, plain] = result;
         const sink = callObj._sink;
         if (sink) {
           const frame = new Float32Array(plain.buffer, plain.byteOffset, plain.byteLength / 4);
@@ -387,7 +332,8 @@ export class Engine {
     try {
       const [result, payload] = pipe.UnprotectAudio(pkt);
       return [result, payload];
-    } catch {
+    } catch (err) {
+      this.c.log?.debug({ err: err.message }, 'failed to unprotect RTP');
       return [null, null];
     }
   }
