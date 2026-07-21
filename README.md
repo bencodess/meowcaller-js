@@ -5,7 +5,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/bencodess/meowcaller-js)](https://github.com/bencodess/meowcaller-js/stargazers)
 
 <p align="center">
-  <img src="meowcaller-js.jpg" alt="meowcaller-js" width="1200">
+  <img src="https://github.com/bencodess/meowcaller-js/raw/main/meowcaller-js.jpg" alt="meowcaller-js" width="1200">
 </p>
 
 WhatsApp VoIP library for [Baileys](https://github.com/WhiskeySockets/Baileys). Handles signaling, DTLS relay transport, SRTP media, and call lifecycle — all in JavaScript.
