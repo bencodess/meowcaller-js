@@ -62,7 +62,7 @@ export function BuildWasmStunAllocateRequest(tx, token, xorEndpoint, relayKey) {
   }
 
   const full = Buffer.concat([msg, ...attrs]);
-  const miLen = 24;
+  const miLen = 20;
   const miBuf = Buffer.alloc(4 + miLen);
   miBuf.writeUInt16BE(AttrMessageIntegrity, 0);
   miBuf.writeUInt16BE(miLen, 2);

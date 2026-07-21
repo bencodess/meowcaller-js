@@ -1,6 +1,6 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { Client } from './src/index.js';
+import { Client, WithLogger } from './src/index.js';
 
 const logger = pino({ level: 'info', name: 'meowcaller' });
 
@@ -14,7 +14,7 @@ async function main() {
     syncFullHistory: false,
   });
 
-  const client = new Client(wa, { logger });
+  const client = new Client(wa, WithLogger(logger));
 
   client.onIncomingCall((call) => {
     logger.info({ id: call.id(), peer: call.peer(), video: call.isVideo() }, 'incoming call');

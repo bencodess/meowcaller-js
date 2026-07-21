@@ -46,7 +46,19 @@ export function DeriveE2eKeys(callKey, participantID) {
   const salt = Buffer.from('WhatsApp VoIP E2E Key', 'utf8');
   const info = Buffer.from(participantID, 'utf8');
   const prk = crypto.createHmac('sha256', salt).update(callKey).digest();
-  const okm = crypto.createHmac('sha256', prk).update(Buffer.concat([info, Buffer.from([1])])).digest();
+
+  const required = 78;
+  const okm = Buffer.alloc(required);
+  let generated = 0;
+  let counter = 1;
+  while (generated < required) {
+    const hmac = crypto.createHmac('sha256', prk);
+    hmac.update(Buffer.concat([generated > 0 ? okm.subarray(0, generated) : Buffer.alloc(0), info, Buffer.from([counter])]));
+    const block = hmac.digest();
+    block.copy(okm, generated, 0, Math.min(32, required - generated));
+    generated += 32;
+    counter++;
+  }
 
   const keys = new E2eSrtpKeys();
   keys.CipherKey = Buffer.from(okm.subarray(0, 32));

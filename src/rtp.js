@@ -107,11 +107,11 @@ export class H264Depacketizer {
   Depacketize(payload) {
     const nalus = [];
     let i = 0;
-    while (i < payload.length) {
+    while (i < payload.length - 2) {
       if (payload[i] === 0 && payload[i + 1] === 0 && payload[i + 2] === 1) {
         const start = i + 3;
         let end = start;
-        while (end < payload.length) {
+        while (end < payload.length - 2) {
           if (payload[end] === 0 && payload[end + 1] === 0 && payload[end + 2] === 1) break;
           end++;
         }

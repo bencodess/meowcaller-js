@@ -1,7 +1,7 @@
 {
   "name": "meowcaller-js",
-  "version": "0.2.1",
-  "description": "WhatsApp VoIP library for Baileys — call signaling, SRTP media, and audio/video adapters",
+  "version": "0.2.2",
+  "description": "WhatsApp VoIP library for Baileys call signaling, SRTP media, and audio/video adapters",
   "main": "src/index.js",
   "types": "types/index.d.ts",
   "type": "module",
