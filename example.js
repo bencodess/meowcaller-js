@@ -1,6 +1,6 @@
 import { makeWASocket, useMultiFileAuthState, DisconnectReason } from '@whiskeysockets/baileys';
 import pino from 'pino';
-import { Client, WithLogger } from './src/index.js';
+import { Client, WithLogger, SinkFunc, SourceFunc } from './src/index.js';
 
 const logger = pino({ level: 'info', name: 'meowcaller' });
 
@@ -24,8 +24,30 @@ async function main() {
     call.onEnd((reason) => logger.info({ reason }, 'call ended'));
     call.onVideoState((vs) => logger.info({ active: vs.Active, upgrade: vs.Upgrade }, 'video state'));
 
+    // receive audio frames (Float32Array — 960 samples at 16 kHz)
+    call.receive(SinkFunc((frame) => {
+      // process incoming audio
+    }));
+
+    // play silence (replace with a real audio source)
+    call.play(SourceFunc(async () => null));
+
     call.answer();
   });
+
+  // place an outbound call
+  // const call = await client.call({}, '+15551234567');
+  //
+  // call.onReady(() => {
+  //   logger.info('outbound call connected');
+  //   call.play(SourceFunc(async () => new Float32Array(960)));
+  // });
+  //
+  // call.receive(SinkFunc((frame) => {
+  //   // process incoming audio from the remote peer
+  // }));
+  //
+  // call.onEnd((reason) => logger.info({ reason }, 'call ended'));
 
   wa.ev.on('connection.update', ({ connection, lastDisconnect }) => {
     logger.info({ connection }, 'wa connection');
