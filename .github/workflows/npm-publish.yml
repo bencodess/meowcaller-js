@@ -2,6 +2,8 @@ name: npm Publish
 
 on:
   push:
+    tags:
+      - 'v*'
 
 jobs:
   publish:
