@@ -1,8 +1,10 @@
 # meowcaller-js
 
-[![npm](https://img.shields.io/npm/v/meowcaller-js)](https://www.npmjs.com/package/meowcaller-js)
-[![License: MIT](https://img.shields.io/github/license/bencodess/meowcaller-js)](LICENSE)
-[![GitHub stars](https://img.shields.io/github/stars/bencodess/meowcaller-js)](https://github.com/bencodess/meowcaller-js/stargazers)
+[![npm version](https://img.shields.io/npm/v/meowcaller-js?style=flat-square&color=22C55E)](https://www.npmjs.com/package/meowcaller-js)
+[![license](https://img.shields.io/npm/l/meowcaller-js?style=flat-square&color=0EA5E9)](LICENSE)
+[![npm downloads](https://img.shields.io/npm/dm/meowcaller-js?style=flat-square&color=F59E0B)](https://www.npmjs.com/package/meowcaller-js)
+[![node](https://img.shields.io/node/v/meowcaller-js?style=flat-square&color=6366F1)](https://nodejs.org)
+[![github stars](https://img.shields.io/github/stars/bencodess/meowcaller-js?style=flat-square&color=F97316)](https://github.com/bencodess/meowcaller-js/stargazers)
 
 <p align="center">
   <img src="https://github.com/bencodess/meowcaller-js/raw/main/meowcaller-js.jpg" alt="meowcaller-js" width="1200">
