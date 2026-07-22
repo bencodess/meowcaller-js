@@ -9,6 +9,7 @@ import { CallPhase, CallDirection, CallSession } from './session.js';
 import { connectDtlsRelay } from './dtls.js';
 import { FrameSamples, SampleRate } from './audio.js';
 import { NewMediaPipeline } from './media-pipeline.js';
+import { OpusEncoder, OpusDecoder } from './opus.js';
 
 export class Engine {
   constructor(client) {
@@ -250,6 +251,16 @@ export class Engine {
       ch = await relay.ConnectRelayMedia(addr, { logger: log, timeout: 12000 });
     }
 
+    let encoder = null;
+    let decoder = null;
+    try {
+      encoder = await OpusEncoder.create({ sampleRate: SampleRate, channels: 1, frameSize: FrameSamples });
+      decoder = await OpusDecoder.create({ sampleRate: SampleRate, channels: 1, maxFrameSize: FrameSamples });
+      log?.info('Opus codec initialized');
+    } catch (err) {
+      log?.warn({ err: err.message }, 'Opus codec init failed, sending raw PCM');
+    }
+
     const tx = crypto.randomBytes(12);
     const endpointXor = stun.EncodeXorRelayEndpoint(ep.addresses[0].ipv4, ep.addresses[0].port);
     const allocate = stun.BuildWasmStunAllocateRequest(tx, rd.relayTokens[ep.tokenID],
@@ -287,7 +298,8 @@ export class Engine {
         if (!frame) frame = new Float32Array(FrameSamples);
 
         const pcmBytes = Buffer.from(frame.buffer);
-        const packet = await txPipe.ProtectAudio(pcmBytes);
+        const opusPayload = encoder ? encoder.encode(frame) : pcmBytes;
+        const packet = await txPipe.ProtectAudio(opusPayload);
         await ch.send(packet);
       } catch (err) {
         log?.debug({ err: err.message }, 'audio send failed');
@@ -298,6 +310,8 @@ export class Engine {
     signal.addEventListener('abort', () => {
       clearInterval(keepaliveTimer);
       clearInterval(sendTimer);
+      encoder?.free();
+      decoder?.free();
       ch.close();
     });
 
@@ -324,7 +338,12 @@ export class Engine {
         if (!result) continue;
         const sink = callObj._sink;
         if (sink) {
-          const frame = new Float32Array(plain.buffer, plain.byteOffset, plain.byteLength / 4);
+          let frame;
+          if (decoder) {
+            frame = decoder.decode(plain);
+          } else {
+            frame = new Float32Array(plain.buffer, plain.byteOffset, plain.byteLength / 4);
+          }
           await sink.writeFrame(frame);
         }
 

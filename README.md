@@ -80,8 +80,8 @@ Full API reference, examples, and guides: **[benslogs.dev/meowcaller-js/docs](ht
 | Audio calls | Signaling + DTLS/SCTP/DataChannel media relay |
 | Video calls | Signaling + H.264 depacketizer |
 | DTLS relay | Implemented via `node-datachannel` (libdatachannel) |
+| Opus codec | Implemented via `libopus-wasm` (16 kHz mono, 60 ms frames) |
 | MLow codec | Stub — needs WASM port |
-| Opus codec | Planned |
 
 ## Differences from [meowcaller](https://github.com/purpshell/meowcaller)
 

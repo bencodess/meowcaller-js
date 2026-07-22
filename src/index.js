@@ -6,5 +6,6 @@ export { PCMStream, WAVFile, MP3File, OpusFile, SinkFunc, SourceFunc, SampleRate
 export { AnnexBRecorder, VideoSinkFunc } from './video.js';
 export { CallRegistry } from './registry.js';
 export { AudioCodec, selectAudioCodec } from './codec.js';
+export { OpusEncoder, OpusDecoder, NewOpusEncoder, NewOpusDecoder } from './opus.js';
 export { WithLogger, WithDiagnostics } from './logging.js';
 export { Recorder } from './diag.js';

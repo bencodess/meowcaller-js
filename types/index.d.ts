@@ -184,6 +184,35 @@ export function AnnexBRecorder(path: string): Promise<VideoSink>;
 export { AudioCodec };
 export function selectAudioCodec(vs: { present: boolean; useMlowCodecV1?: boolean } | null): symbol;
 
+// -- Opus Codec --
+
+export interface OpusEncoderOpts {
+  sampleRate?: number;
+  channels?: number;
+  frameSize?: number;
+}
+
+export interface OpusDecoderOpts {
+  sampleRate?: number;
+  channels?: number;
+  maxFrameSize?: number;
+}
+
+export class OpusEncoder {
+  static create(opts?: OpusEncoderOpts): Promise<OpusEncoder>;
+  encode(frame: Float32Array): Buffer;
+  free(): void;
+}
+
+export class OpusDecoder {
+  static create(opts?: OpusDecoderOpts): Promise<OpusDecoder>;
+  decode(payload: Buffer): Float32Array;
+  free(): void;
+}
+
+export function NewOpusEncoder(opts?: OpusEncoderOpts): Promise<OpusEncoder>;
+export function NewOpusDecoder(opts?: OpusDecoderOpts): Promise<OpusDecoder>;
+
 // -- Registry --
 
 export class CallRegistry {
