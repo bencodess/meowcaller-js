@@ -71,7 +71,7 @@ console.log(`${calls.length} active call(s)`);
 
 ## Documentation
 
-Full API reference, examples, and guides: **[benslogs.dev/meowcaller-js/docs](https://benslogs.dev/meowcaller-js/docs/)**
+Full API reference, examples, and guides: meowcaller-js.benslogs.dev
 
 ## Implementation Status
 
