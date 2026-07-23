@@ -184,6 +184,29 @@ export function AnnexBRecorder(path: string): Promise<VideoSink>;
 export { AudioCodec };
 export function selectAudioCodec(vs: { present: boolean; useMlowCodecV1?: boolean } | null): symbol;
 
+// -- MLow Codec (stub) --
+
+export interface MlowEncoderOpts {
+  logger?: Logger;
+}
+
+export interface MlowDecoderOpts {
+  logger?: Logger;
+}
+
+export class MlowEncoder {
+  constructor(opts?: MlowEncoderOpts);
+  encode(frame: Float32Array): Buffer;
+}
+
+export class MlowDecoder {
+  constructor(opts?: MlowDecoderOpts);
+  decode(payload: Buffer): Float32Array;
+}
+
+export function NewMlowEncoder(opts?: MlowEncoderOpts): MlowEncoder;
+export function NewMlowDecoder(opts?: MlowDecoderOpts): MlowDecoder;
+
 // -- Opus Codec --
 
 export interface OpusEncoderOpts {

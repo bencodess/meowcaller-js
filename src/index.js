@@ -9,3 +9,4 @@ export { AudioCodec, selectAudioCodec } from './codec.js';
 export { OpusEncoder, OpusDecoder, NewOpusEncoder, NewOpusDecoder } from './opus.js';
 export { WithLogger, WithDiagnostics } from './logging.js';
 export { Recorder } from './diag.js';
+export { MlowEncoder, MlowDecoder, NewMlowEncoder, NewMlowDecoder } from './mlow.js';
